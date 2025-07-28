@@ -30,5 +30,5 @@ CHIP PC {
     // If reset is true, reset to zero; otherwise, use the result of the previous step
     Mux16(a=loadedCount, b=false, sel=reset, out=newCount);
 
-    // Final PC processing order: reset > load > inc > hold
+    // Final PC precedence order: reset > load > inc > hold
 }
