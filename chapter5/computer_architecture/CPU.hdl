@@ -1,0 +1,226 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/5/CPU.hdl
+/**
+ * The Hack Central Processing unit (CPU).
+ * Parses the binary code in the instruction input and executes it according to the
+ * Hack machine language specification. In the case of a C-instruction, computes the
+ * function specified by the instruction. If the instruction specifies to read a memory
+ * value, the inM input is expected to contain this value. If the instruction specifies
+ * to write a value to the memory, sets the outM output to this value, sets the addressM
+ * output to the target address, and asserts the writeM output (when writeM = 0, any
+ * value may appear in outM).
+ * If the reset input is 0, computes the address of the next instruction and sets the
+ * pc output to that value. If the reset input is 1, sets pc to 0.
+ * Note: The outM and writeM outputs are combinational: they are affected by the
+ * instruction's execution during the current cycle. The addressM and pc outputs are
+ * clocked: although they are affected by the instruction's execution, they commit to
+ * their new values only in the next cycle.
+ */
+CHIP CPU {
+
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset==1) or continue executing
+                         // the current program (reset==0).
+
+    OUT outM[16],        // M value output
+        writeM,          // Write to M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
+
+    PARTS:
+    // If instruction[15] == 0, then Ainstruction = 1;
+    // indicating that it is an A-instruction.
+    Not(
+        in=instruction[15],
+        out=Ainstruction
+    );
+
+    // Cinstruction is the logical negation of Ainstruction;
+    // if it is not an A-instruction, then it is a C-instruction, and vice versa.
+    Not(
+        in=Ainstruction,
+        out=Cinstruction
+    );
+
+    // Behavior definition:
+    // instruction[15] = 0 → A-instruction
+    // instruction[15] = 1 → C-instruction
+
+    // ALUtoA = 1 when it is a C-instruction and
+    // the A destination bit (instruction[5]) is set.
+    // In this case, the ALU output must be written into register A.
+    And(
+        a=Cinstruction,
+        b=instruction[5],
+        out=ALUtoA
+    );
+
+    // Selects the input data for register A:
+    // - If ALUtoA = 0 → Aregin receives instruction
+    //   (in the case of an A-instruction, the immediate value is loaded).
+    // - If ALUtoA = 1 → Aregin receives ALUout
+    //   (for a C-instruction with destination A, register A receives the ALU result).
+    Mux16(
+        a=instruction,
+        b=ALUout,
+        sel=ALUtoA,
+        out=Aregin
+    );
+
+    // loadA = 1 when it is an A-instruction
+    // or a C-instruction with destination A.
+    Or(
+        a=Ainstruction,
+        b=ALUtoA,
+        out=loadA
+    );
+    // This signal controls the ARegister, which loads Aregin on the next clock cycle.
+
+    // A register (clocked). Produces Aout (current value of register A).
+    // addressM (memory address) is derived from Aout[0..14].
+    ARegister(
+        in=Aregin,
+        load=loadA,
+        out=Aout
+    );
+
+    // Selects the second ALU operand (y):
+    // - If instruction[12] == 0 → y = Aout (value from register A).
+    // - If instruction[12] == 1 → y = inM (value from the memory pointed to by A).
+    Mux16(
+        a=Aout,
+        b=inM,
+        sel=instruction[12],
+        out=AMout
+    );
+
+    // Signal to load register D: loadD = 1 when
+    // it is a C-instruction and the D destination bit (instruction[4]) is set.
+    And(
+        a=Cinstruction,
+        b=instruction[4],
+        out=loadD
+    );
+    // D register (clocked). Receives ALUout on the next clock cycle if loadD = 1.
+    DRegister(
+        in=ALUout,
+        load=loadD,
+        out=Dout
+    );
+    
+    // The ALU performs the computation (comp) operation defined by six control bits.
+    // Produces ALUout (16 bits) and the flags zr (output is zero) and ng (output is negative).
+    // x is fixed to Dout (contents of register D).
+    // y is AMout (Aout or inM, depending on the a bit).
+    ALU(
+        x=Dout,
+        y=AMout,
+        zx=instruction[11],
+        nx=instruction[10], 
+        zy=instruction[9],
+        ny=instruction[8],
+        f=instruction[7],
+        no=instruction[6],
+        out=ALUout,
+        zr=ZRout,
+        ng=NGout
+    );
+    
+    // address[0..14] = Aout[0..14] — outputs the lower 15 bits
+    // of register A as the RAM address.
+    Or16(
+        a=false,
+        b=Aout,
+        out[0..14]=addressM
+    );
+
+    // outM = ALUout — the value that will be written to RAM if writeM is active.
+    Or16(
+        a=false,
+        b=ALUout,
+        out=outM
+    );
+
+    // writeM = 1 when it is a C-instruction and
+    // the M destination bit (instruction[3]) is set.
+    // Indicates that outM must be written to addressM.
+    And(
+        a=Cinstruction,
+        b=instruction[3],
+        out=writeM
+    );
+
+    // Jump logic:
+    
+    // Jump if the result is zero and the JEQ bit is set.
+    And(
+        a=ZRout,
+        b=instruction[1],
+        out=jeq
+    );
+
+    // Jump if the result is negative and the JLT bit is set.
+    And(
+        a=NGout,
+        b=instruction[2],
+        out=jlt
+    );
+
+    // Jump if the result is positive and the JGT bit is set.
+    Or(
+        a=ZRout,
+        b=NGout,
+        out=zeroOrNeg
+    );
+    Not(
+        in=zeroOrNeg,
+        out=positive
+    );
+    And(
+        a=positive,
+        b=instruction[0],
+        out=jgt
+    );
+
+    // The PC is loaded with A when it is a C-instruction
+    // and any jump condition is satisfied.
+    Or(
+        a=jeq,
+        b=jlt,
+        out=jle
+    );
+    Or(
+        a=jle,
+        b=jgt,
+        out=jumpToA
+    );
+    And(
+        a=Cinstruction,
+        b=jumpToA,
+        out=PCload
+    );
+
+    // The PC increments when it is not being loaded.
+    Not(
+        in=PCload, 
+        out=PCinc
+    );
+
+    // Program counter (PC) register. Behavior:
+    // - If reset == 1 → on the next cycle, pc is set to 0.
+    // - If load == 1 → on the next cycle, pc is set to Aout[0..14].
+    // - If inc == 1 → pc is incremented (pc ← pc + 1).
+    // Note that PCload has priority:
+    // if load = 1, increment does not occur (because PCinc = NOT PCload).
+    PC(
+        in=Aout,
+        inc=PCinc,
+        load=PCload,
+        reset=reset,
+        out[0..14]=pc
+    );
+}
