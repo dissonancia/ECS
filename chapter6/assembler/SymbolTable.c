@@ -80,17 +80,6 @@ static size_t hash(const unsigned char *str) {
     return hash;
 }
 
-static int buck_insert(Bucket *b, unsigned char *key, int addr) {
-    for(size_t i = 0; i < b->count; ++i) {
-        if (strcmp((char *)b->items[i].key, (char *)key) == 0) {
-            return b->items[i].address;
-        }
-    }
-    Pair new_pair = {strdup((char *)key), addr};
-    da_append(b, new_pair);
-    return addr;
-}
-
 static int insert_internal(HashTable *t, unsigned char *key, int addr, Operation flag) {
     size_t i = hash(key) % t->T;
 
