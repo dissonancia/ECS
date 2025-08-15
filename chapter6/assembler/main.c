@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "Code.h"
 #include "Parser.h"
 
 int main(int argc, char *argv[]) {
@@ -22,13 +23,22 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    if (create_mnemonic_tables() < 0) {
+        perror("Error creating Mnemonic Tables.");
+        return EXIT_FAILURE;
+    }
+
     if (assembler(t, path) < 0) {
         fprintf(stderr, "Failed to translate ASM code to binary.");
+        free_mnemonic_tables();
         free_table(t);
         return EXIT_FAILURE;
     }
 
     printf("Assembling finished successfully!\n");
+    
+    free_mnemonic_tables();
     free_table(t);
+
     return EXIT_SUCCESS;
 }

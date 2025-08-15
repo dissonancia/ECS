@@ -268,7 +268,7 @@ int assembler(HashTable *t, const char *path) {
 
     fclose(f);
     fclose(out);
-    return 1;
+    return 0;
 }
 
 int build_symtable(HashTable *t, const char *path) {
@@ -289,5 +289,5 @@ int build_symtable(HashTable *t, const char *path) {
     }
 
     fclose(f);
-    return 1;
+    return 0;
 }
