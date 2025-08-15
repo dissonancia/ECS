@@ -1,39 +1,24 @@
 #ifndef SYMBOLTABLE_H_
 #define SYMBOLTABLE_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <string.h>
+#include <stddef.h>
 
-// DYNAMIC_ARRAY --- BUCKETS
-#define da_append(xs, x)\
-    do {\
-    if ((xs)->count >= (xs)->capacity) {\
-        if ((xs)->capacity == 0) (xs)->capacity = 128;\
-        else (xs)->capacity *= 2;\
-        (xs)->items = realloc((xs)->items, (xs)->capacity * sizeof(*(xs)->items));\
-    }\
-    (xs)->items[(xs)->count++] = (x);\
-    } while(0)
+// STRUCTS
 
-#define da_free(xs) free((xs).items)
-
+// Pair (symbol, address) as an entry for the Symbol Table
 typedef struct {
     unsigned char *key;
     int address;
 } Pair;
 
+// Dynamic array specification as Symbol Table collision control
 typedef struct {
     Pair *items;
     size_t count;
     size_t capacity;
 } Bucket;
 
-typedef enum { INSERT, CONTAINS, GET } Operation;
-
-// HASH TABLE
-
+// Hash Table specification
 #define TABLE_SIZE 1024
 #define LOAD_FACTOR 0.75
 

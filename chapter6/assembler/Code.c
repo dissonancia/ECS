@@ -1,3 +1,4 @@
+#include <string.h>
 #include "Code.h"
 
 int code_dest(const char *mnemonic) {

@@ -1,6 +1,36 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+
 #include "SymbolTable.h"
 
-void rehash(HashTable *t);
+// MACROS
+
+// DYNAMIC ARRAY --- BUCKETS
+#define da_append(xs, x)\
+    do {\
+    if ((xs)->count >= (xs)->capacity) {\
+        if ((xs)->capacity == 0) (xs)->capacity = 128;\
+        else (xs)->capacity *= 2;\
+        (xs)->items = realloc((xs)->items, (xs)->capacity * sizeof(*(xs)->items));\
+    }\
+    (xs)->items[(xs)->count++] = (x);\
+    } while(0)
+
+#define da_free(xs) free((xs).items)
+
+// ---------------------------------------------------------------------------------------
+
+// ENUM
+// Since all three operations use the same function, this enum is used as a control.
+typedef enum { INSERT, CONTAINS, GET } Operation;
+
+// ---------------------------------------------------------------------------------------
+
+// Functions
+
+static void rehash(HashTable *t);
 
 HashTable* create_table() {
     HashTable *t = malloc(sizeof(HashTable));
@@ -42,7 +72,7 @@ HashTable* create_table() {
     return t;
 }
 
-size_t hash(const unsigned char *str) {
+static size_t hash(const unsigned char *str) {
     size_t hash = 5381;
     while (*str) {
         hash = ((hash << 5) + hash) + (*str++);
@@ -50,7 +80,7 @@ size_t hash(const unsigned char *str) {
     return hash;
 }
 
-int buck_insert(Bucket *b, unsigned char *key, int addr) {
+static int buck_insert(Bucket *b, unsigned char *key, int addr) {
     for(size_t i = 0; i < b->count; ++i) {
         if (strcmp((char *)b->items[i].key, (char *)key) == 0) {
             return b->items[i].address;
@@ -112,7 +142,7 @@ int get_address(HashTable *t, unsigned char *symbol) {
     return insert_internal(t, symbol, -1, GET);
 }
 
-void rehash(HashTable *t) {
+static void rehash(HashTable *t) {
     size_t old_T = t->T;
     Pair *old_table = t->table;
     Bucket *old_buckets = t->buckets;

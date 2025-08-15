@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "Parser.h"
 
 int main(int argc, char *argv[]) {
@@ -14,18 +17,18 @@ int main(int argc, char *argv[]) {
     }
 
     if (build_symtable(t, path) < 0) {
-        perror("Error building the symbol table during the first pass.");
+        fprintf(stderr, "Error building the symbol table during the first pass.");
         free_table(t);
         return EXIT_FAILURE;
     }
 
     if (assembler(t, path) < 0) {
-        perror("Failed to translate ASM code to binary.");
+        fprintf(stderr, "Failed to translate ASM code to binary.");
         free_table(t);
         return EXIT_FAILURE;
     }
 
-    free_table(t);
     printf("Assembling finished successfully!\n");
+    free_table(t);
     return EXIT_SUCCESS;
 }

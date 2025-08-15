@@ -1,4 +1,16 @@
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+
 #include "Parser.h"
+#include "Code.h"
+
+typedef enum {
+    A_COMMAND,
+    C_COMMAND,
+    L_COMMAND
+} CommandType;
 
 static CommandType command_type(char *line) {
     switch (line[0]) {
@@ -135,23 +147,17 @@ static char* parser_jump(const char *command) {
 }
 
 static char* output_name(const char *input_filename) {
-    const char *slash1 = strrchr(input_filename, '/');
-    const char *slash2 = strrchr(input_filename, '\\');
-    const char *slash = (slash1 > slash2) ? slash1 : slash2;
-    const char *filename = slash ? slash + 1 : input_filename;
-
-    size_t name_len = strlen(filename);
-    if (name_len < 4 || strcmp(filename + name_len - 4, ".asm") != 0) {
+    size_t len = strlen(input_filename);
+    if (len < 4 || strcmp(input_filename + len - 4, ".asm") != 0)
         return NULL;
-    }
-
-    const char *output_dir = "HACK_Files/";
-    size_t output_len = strlen(output_dir) + (name_len - 4) + strlen(".hack") + 1;
-
-    char *output_filename = malloc(output_len);
+    
+    char *output_filename = malloc(len + 1);
     if (!output_filename) return NULL;
 
-    sprintf(output_filename, "%s%.*s.hack", output_dir, (int)(name_len - 4), filename);
+    strncpy(output_filename, input_filename, len - 4);
+    output_filename[len - 4] = '\0';
+
+    strcat(output_filename, ".hack");
 
     return output_filename;
 }
@@ -219,15 +225,15 @@ int assembler(HashTable *t, const char *path) {
             }
 
             if (strcmp(mnemonic_comp, "Error") == 0) {
-                perror("Error in c-instruction formation (comp).");
+                fprintf(stderr, "Error in c-instruction formation (comp).");
                 return -1;
             }
             if (strcmp(mnemonic_dest, "Error") == 0) {
-                perror("Error in c-instruction formation (dest).");
+                fprintf(stderr, "Error in c-instruction formation (dest).");
                 return -1;
             }
             if (strcmp(mnemonic_jump, "Error") == 0) {
-                perror("Error in c-instruction formation (jump).");
+                fprintf(stderr, "Error in c-instruction formation (jump).");
                 return -1;
             }
 
@@ -235,17 +241,17 @@ int assembler(HashTable *t, const char *path) {
 
             comp_bits = code_comp(mnemonic_comp);
             if (comp_bits < 0) {
-                perror("Error in Translating Hack assembly language mnemonics into binary codes (comp).");
+                fprintf(stderr, "Error in Translating Hack assembly language mnemonics into binary codes (comp).");
                 return -1;
             }
             dest_bits = code_dest(mnemonic_dest);
             if (dest_bits < 0) {
-                perror("Error in Translating Hack assembly language mnemonics into binary codes (dest).");
+                fprintf(stderr, "Error in Translating Hack assembly language mnemonics into binary codes (dest).");
                 return -1;
             }
             jump_bits = code_jump(mnemonic_jump);
             if (jump_bits < 0) {
-                perror("Error in Translating Hack assembly language mnemonics into binary codes (jump).");
+                fprintf(stderr, "Error in Translating Hack assembly language mnemonics into binary codes (jump).");
                 return -1;
             }
 
