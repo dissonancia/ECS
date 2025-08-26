@@ -12,9 +12,6 @@ typedef struct {
 // Initialize and open the output file (.asm)
 bool code_writer_init(Code_Writer *cw, const char *output_path);
 
-// Initialize Stack
-void write_init(Code_Writer *cw);
-
 // Informs that it has started translating a new VM file
 void set_file_name(Code_Writer *cw, const char *file_name);
 

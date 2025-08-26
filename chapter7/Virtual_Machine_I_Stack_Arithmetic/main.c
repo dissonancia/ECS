@@ -13,7 +13,6 @@ int main(int argc, char *argv[]) {
 
     Code_Writer code_writer;
     code_writer_init(&code_writer, output_path);
-    write_init(&code_writer);
 
     Dir_Paths paths = all_dir_paths(dir_path);
     if (paths.words.items == NULL) {

@@ -1,17 +1,6 @@
 #include "Writer.h"
 
-bool code_writer_init(Code_Writer *cw, const char *output_path) {
-    cw->out = fopen(output_path, "w");
-    if (!cw->out) {
-        fprintf(stderr, "codewriter_init: failed to open %s\n", output_path);
-        return false;
-    }
-    cw->label_counter = 0;
-    cw->file_name[0] = '\0';
-    return true;
-}
-
-void write_init(Code_Writer *cw) {
+static inline void write_init(Code_Writer *cw) {
     // SP = 256
     fprintf(cw->out,
         "@256\n"
@@ -19,6 +8,18 @@ void write_init(Code_Writer *cw) {
         "@SP\n"
         "M=D\n"
     );
+}
+
+bool code_writer_init(Code_Writer *cw, const char *output_path) {
+    cw->out = fopen(output_path, "w");
+    if (!cw->out) {
+        fprintf(stderr, "codewriter_init: failed to open %s\n", output_path);
+        return false;
+    }
+    write_init(&cw);
+    cw->label_counter = 0;
+    cw->file_name[0] = '\0';
+    return true;
 }
 
 void set_file_name(Code_Writer *cw, const char *file_path) {
