@@ -16,7 +16,7 @@ bool code_writer_init(Code_Writer *cw, const char *output_path) {
         fprintf(stderr, "codewriter_init: failed to open %s\n", output_path);
         return false;
     }
-    write_init(&cw);
+    write_init(cw);
     cw->label_counter = 0;
     cw->file_name[0] = '\0';
     return true;
