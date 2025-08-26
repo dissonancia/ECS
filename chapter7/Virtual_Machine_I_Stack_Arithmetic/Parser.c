@@ -94,5 +94,4 @@ int16_t arg2(Parser *p) {
 void parser_free(Parser *p) {
     da_free(p->ws);
     sb_free(p->data);
-    // no need to release content, as sb is not saved yet
 }

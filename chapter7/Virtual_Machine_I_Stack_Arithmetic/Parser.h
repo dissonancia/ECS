@@ -1,7 +1,6 @@
 #ifndef PARSER_H_
 #define PARSER_H_
 
-//#define UDEF static inline
 #include "Utils.h"
 
 typedef enum {
@@ -17,8 +16,8 @@ typedef enum {
 } Command_Type;
 
 typedef struct {
-    String_Builder data;   // allocated data
-    String_View content;   // entire file content
+    String_Builder data;   // allocated data (owner)
+    String_View content;   // non-owning view into the buffer owned by String_Builder
     String_View current;   // current command (line already cleared)
     Words       ws;        // tokens of the current line
 } Parser;
