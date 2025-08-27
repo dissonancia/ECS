@@ -12,10 +12,8 @@ static inline void write_init(Code_Writer *cw) {
 
 bool code_writer_init(Code_Writer *cw, const char *output_path) {
     cw->out = fopen(output_path, "w");
-    if (!cw->out) {
-        fprintf(stderr, "codewriter_init: failed to open %s\n", output_path);
-        return false;
-    }
+    if (!cw->out) return false;
+    
     write_init(cw);
     cw->label_counter = 0;
     cw->file_name[0] = '\0';

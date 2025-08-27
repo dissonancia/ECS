@@ -15,7 +15,11 @@ int main(int argc, char *argv[]) {
     }
 
     Code_Writer code_writer;
-    code_writer_init(&code_writer, output_path);
+    if(!code_writer_init(&code_writer, output_path)) {
+        fprintf(stderr, "Erro %d: %s\n", errno, strerror(errno));
+        code_writer_close(&code_writer);
+        return EXIT_FAILURE;
+    }
 
     Dir_Paths paths = all_dir_paths(dir_path);
     if (paths.words.items == NULL) {
