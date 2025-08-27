@@ -21,10 +21,10 @@ int main(int argc, char *argv[]) {
     }
 
     da_foreach(String_View, sv, &paths.words) {
+        if (!sv_end_with(*sv, ".vm")) continue;
+        
         char path[MAX_PATH];
         if (!sv_to_cstr(*sv, path, sizeof(path))) return EXIT_FAILURE;
-
-        if (!sv_end_with(*sv, ".vm")) continue;
 
         Parser parser;
         if (!parser_init(&parser, path)) return EXIT_FAILURE;

@@ -1,3 +1,5 @@
+/* This is a modification and extension of: nob - v1.23.0 - Public Domain - https://github.com/tsoding/nob.h */
+
 #include "Utils.h"
 
 UDEF bool read_entire_file(const char *path, String_Builder *sb) {
