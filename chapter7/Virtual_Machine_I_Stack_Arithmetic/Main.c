@@ -53,6 +53,7 @@ int main(int argc, char *argv[]) {
     }
 
     code_writer_close(&code_writer);
+    free_dir_paths(&paths);
 
     return EXIT_SUCCESS;
 }
