@@ -302,8 +302,7 @@ UDEF String_Builder dir_files_sb(const char *dirpath) {
 
 UDEF bool sv_to_cstr(String_View sv, char *buf, size_t buf_size) {
     if (sv.count + 1 > buf_size) {
-        fprintf(stderr, "sv_to_cstr: path too long (%zu chars): %.*s\n",
-                sv.count, (int)sv.count, sv.data);
+        errno = ENAMETOOLONG;
         return false;
     }
     memcpy(buf, sv.data, sv.count);

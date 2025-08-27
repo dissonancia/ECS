@@ -9,7 +9,10 @@ int main(int argc, char *argv[]) {
     const char *dir_path = argv[1];
 
     char output_path[MAX_PATH];
-    snprintf(output_path, sizeof(output_path), "%s\\output.asm", dir_path);
+    if (snprintf(output_path, sizeof(output_path), "%s\\output.asm", dir_path) >= sizeof(output_path)) {
+        fprintf(stderr, "Output path too long\n");
+        return EXIT_FAILURE;
+    }
 
     Code_Writer code_writer;
     code_writer_init(&code_writer, output_path);
@@ -17,17 +20,31 @@ int main(int argc, char *argv[]) {
     Dir_Paths paths = all_dir_paths(dir_path);
     if (paths.words.items == NULL) {
         fprintf(stderr, "parser: failed to read directory paths: %s\n", dir_path);
+        code_writer_close(&code_writer);
         return EXIT_FAILURE;
     }
+
+    int status = EXIT_SUCCESS;
+    Parser parser;
+    bool parser_active = false;
 
     da_foreach(String_View, sv, &paths.words) {
         if (!sv_end_with(*sv, ".vm")) continue;
         
         char path[MAX_PATH];
-        if (!sv_to_cstr(*sv, path, sizeof(path))) return EXIT_FAILURE;
+        if (!sv_to_cstr(*sv, path, sizeof(path))) {
+            perror("sv_to_cstr");
+            status = EXIT_FAILURE;
+            goto cleanup;
+        }
 
-        Parser parser;
-        if (!parser_init(&parser, path)) return EXIT_FAILURE;
+        if (!parser_init(&parser, path)) {
+            fprintf(stderr, "parser_init failed for %s: %s\n", path, strerror(errno));
+            status = EXIT_FAILURE;
+            goto cleanup;
+        }
+
+        parser_active = true;
 
         while (has_more_commands(&parser)) {
             advance(&parser);
@@ -50,10 +67,13 @@ int main(int argc, char *argv[]) {
         }
 
         parser_free(&parser);
+        parser_active = false;
     }
 
+cleanup:
+    if (parser_active) parser_free(&parser);
     code_writer_close(&code_writer);
     free_dir_paths(&paths);
 
-    return EXIT_SUCCESS;
+    return status;
 }

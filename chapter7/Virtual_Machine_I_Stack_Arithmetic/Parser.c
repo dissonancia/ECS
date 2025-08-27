@@ -35,7 +35,7 @@ static inline int16_t parser_arg2(Command_Type type, Words ws) {
 bool parser_init(Parser *p, const char *path) {
     p->data = (String_Builder){0};
     if (!read_entire_file(path, &p->data)) {
-        fprintf(stderr, "parser_init: failed to read %s\n", path);
+        errno = EIO;
         return false;
     }
 
