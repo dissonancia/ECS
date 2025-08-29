@@ -10,6 +10,14 @@ static inline void write_init(Code_Writer *cw) {
     );
 }
 
+static inline void write_end(Code_Writer *cw) {
+    fprintf(cw->out, 
+        "(END)\n"
+        "@END\n"
+        "0;JMP"
+    );
+}
+
 bool code_writer_init(Code_Writer *cw, const char *output_path) {
     cw->out = fopen(output_path, "w");
     if (!cw->out) return false;
