@@ -369,5 +369,6 @@ void write_push_pop(Code_Writer *cw, Command_Type command, String_View segment, 
 }
 
 void code_writer_close(Code_Writer *cw) {
+    write_end(cw);
     if (cw->out) fclose(cw->out);
 }
