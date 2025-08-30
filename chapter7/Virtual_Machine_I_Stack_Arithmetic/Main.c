@@ -42,6 +42,8 @@ int main(int argc, char *argv[]) {
             goto cleanup;
         }
 
+        set_file_name(&code_writer, path);
+
         if (!parser_init(&parser, path)) {
             fprintf(stderr, "parser_init failed for %s: %s\n", path, strerror(errno));
             status = EXIT_FAILURE;
