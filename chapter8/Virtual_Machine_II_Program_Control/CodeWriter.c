@@ -1,6 +1,6 @@
 #include "CodeWriter.h"
 
-static inline int in_function(const Code_Writer *cw) {
+static inline bool in_function(const Code_Writer *cw) {
     return cw->current_function[0] != '\0';
 }
 
