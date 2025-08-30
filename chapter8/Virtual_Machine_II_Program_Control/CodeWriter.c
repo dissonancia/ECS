@@ -410,20 +410,17 @@ void write_call(Code_Writer *cw, String_View f_name, uint16_t num_args) {
     snprintf(return_label, sizeof(return_label),
          "RETURN_%.*s_%d", (int)f_name.count, f_name.data, id);
 
-    // push return-address
     fprintf(cw->out,
+        // push return-address
         "@%s\n"
         "D=A\n"
         "@SP\n"
         "A=M\n"
         "M=D\n"
         "@SP\n"
-        "M=M+1\n",
-        return_label
-    );
+        "M=M+1\n"
 
-    // push LCL
-    fprintf(cw->out,
+        // push LCL
         "@LCL\n"
         "D=M\n"
         "@SP\n"
@@ -431,10 +428,8 @@ void write_call(Code_Writer *cw, String_View f_name, uint16_t num_args) {
         "M=D\n"
         "@SP\n"
         "M=M+1\n"
-    );
 
-    // push ARG
-    fprintf(cw->out,
+        // push ARG
         "@ARG\n"
         "D=M\n"
         "@SP\n"
@@ -442,10 +437,8 @@ void write_call(Code_Writer *cw, String_View f_name, uint16_t num_args) {
         "M=D\n"
         "@SP\n"
         "M=M+1\n"
-    );
 
-    // push THIS
-    fprintf(cw->out,
+        // push THIS
         "@THIS\n"
         "D=M\n"
         "@SP\n"
@@ -453,10 +446,8 @@ void write_call(Code_Writer *cw, String_View f_name, uint16_t num_args) {
         "M=D\n"
         "@SP\n"
         "M=M+1\n"
-    );
 
-    // push THAT
-    fprintf(cw->out,
+        // push THAT
         "@THAT\n"
         "D=M\n"
         "@SP\n"
@@ -464,10 +455,8 @@ void write_call(Code_Writer *cw, String_View f_name, uint16_t num_args) {
         "M=D\n"
         "@SP\n"
         "M=M+1\n"
-    );
 
-    // ARG = SP - n - 5
-    fprintf(cw->out,
+        // ARG = SP - n - 5
         "@SP\n"
         "D=M\n"
         "@%u\n"
@@ -475,28 +464,24 @@ void write_call(Code_Writer *cw, String_View f_name, uint16_t num_args) {
         "@5\n"
         "D=D-A\n"
         "@ARG\n"
-        "M=D\n",
-        num_args
-    );
+        "M=D\n"
 
-    // LCL = SP
-    fprintf(cw->out,
+        // LCL = SP
         "@SP\n"
         "D=M\n"
         "@LCL\n"
         "M=D\n"
-    );
 
-    // goto f
-    fprintf(cw->out,
+        // goto f
         "@%.*s\n"
-        "0;JMP\n",
-        (int)f_name.count, f_name.data
-    );
+        "0;JMP\n"
 
-    // (return-address)
-    fprintf(cw->out,
+        // (return-address)
         "(%s)\n",
+
+        return_label,
+        num_args,
+        (int)f_name.count, f_name.data,
         return_label
     );
 }
