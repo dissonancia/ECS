@@ -1,5 +1,5 @@
-#ifndef WRITER_H_
-#define WRITER_H_
+#ifndef CODEWRITER_H_
+#define CODEWRITER_H_
 
 #include "Parser.h"
 
@@ -46,4 +46,4 @@ void write_function(Code_Writer *cw, String_View f_name, uint16_t num_locals);
 // Close the output file
 void code_writer_close(Code_Writer *cw);
 
-#endif // WRITER_H_
+#endif // CODEWRITER_H_
