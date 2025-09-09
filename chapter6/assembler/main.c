@@ -36,7 +36,6 @@ int main(int argc, char *argv[]) {
     }
 
     printf("Assembling finished successfully!\n");
-    
     free_mnemonic_tables();
     free_table(t);
 

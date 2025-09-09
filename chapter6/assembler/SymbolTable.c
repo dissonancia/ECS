@@ -38,7 +38,7 @@ HashTable* create_table() {
     t->T = TABLE_SIZE;
     t->collisions = 0;
     
-    t->table = calloc(t->T, sizeof(Pair));
+    t->table = calloc(t->T, sizeof(Entry));
     t->buckets = calloc(t->T, sizeof(Bucket));
     t->count = 0;
     t->rom = 0;
@@ -107,8 +107,8 @@ static int insert_internal(HashTable *t, unsigned char *key, int addr, Operation
         if (flag == GET) return -1; // symbol isn't in table -> return -1 as error control;
 
         if (flag == INSERT) {
-            Pair new_pair = {strdup((char *)key), addr};
-            da_append(&t->buckets[i], new_pair);
+            Entry new_entry = {strdup((char *)key), addr};
+            da_append(&t->buckets[i], new_entry);
             t->collisions++;
             t->count++;
             return addr;
@@ -133,11 +133,11 @@ int get_address(HashTable *t, unsigned char *symbol) {
 
 static void rehash(HashTable *t) {
     size_t old_T = t->T;
-    Pair *old_table = t->table;
+    Entry *old_table = t->table;
     Bucket *old_buckets = t->buckets;
 
     t->T *= 2;
-    t->table = calloc(t->T, sizeof(Pair));
+    t->table = calloc(t->T, sizeof(Entry));
     t->buckets = calloc(t->T, sizeof(Bucket));
     t->count = 0;
     t->collisions = 0;
