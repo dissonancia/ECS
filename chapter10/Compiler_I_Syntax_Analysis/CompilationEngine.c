@@ -29,7 +29,7 @@ static void escape_and_fprintf(FILE *out, const char *s) {
     }
 }
 
-/* indentation helpers using ce->indent */
+// indentation helpers using ce->indent
 static void ce_write_indent(CompilationEngine *ce) {
     if (!ce || !ce->out) return;
     for (int i = 0; i < ce->indent; ++i) fputc(' ', ce->out);
