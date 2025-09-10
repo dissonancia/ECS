@@ -6,8 +6,6 @@
 typedef struct {
     Tokens tokens;
     size_t current;
-    const char* input_path;
-    const char* output_path;
     FILE* out;
     bool had_error; // set to true on parse errors
     int indent;     // current indentation in spaces

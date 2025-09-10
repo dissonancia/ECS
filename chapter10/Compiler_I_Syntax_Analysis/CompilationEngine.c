@@ -80,7 +80,6 @@ bool compilation_engine_init(CompilationEngine *ce, Tokens tokens, const char *o
     ce->tokens = tokens;
     ce->current = 0;
     ce->out = out;
-    ce->output_path = output_path;
     ce->had_error = false;
     ce->indent = 0;
     return true;
