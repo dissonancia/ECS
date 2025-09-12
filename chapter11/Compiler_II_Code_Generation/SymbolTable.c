@@ -17,15 +17,6 @@ struct SymbolTable {
     size_t counts[4];            // STATIC (0), FIELD(1), ARG(2), VAR(3)
 };
 
-// helper to free SymbolTable
-static void symbol_entry_free(void *v) {
-    if (!v) return;
-    SymbolEntry *e = (SymbolEntry *)v;
-    free(e->name);
-    free(e->type);
-    free(e);
-}
-
 // create SymbolTable
 SymbolTable *st_create(void) {
     SymbolTable *st = calloc(1, sizeof(*st));
@@ -36,6 +27,15 @@ SymbolTable *st_create(void) {
     st->counts[ARG]    = 0;
     st->counts[VAR]    = 0;
     return st;
+}
+
+// helper to free SymbolTable
+static void symbol_entry_free(void *v) {
+    if (!v) return;
+    SymbolEntry *e = (SymbolEntry *)v;
+    free(e->name);
+    free(e->type);
+    free(e);
 }
 
 // free SymbolTable
@@ -67,22 +67,17 @@ void st_define(SymbolTable *st, const char *name, const char *type, Kind kind) {
     e->type = strdup(type ? type : "");
     e->kind = kind;
 
-    size_t idx = 0;
     if (kind == STATIC) {
-        idx = st->counts[STATIC]++;
-        e->index = idx;
+        e->index = st->counts[STATIC]++;
         ht_insert(st->class_scope, name, e);
     } else if (kind == FIELD) {
-        idx = st->counts[FIELD]++;
-        e->index = idx;
+        e->index = st->counts[FIELD]++;
         ht_insert(st->class_scope, name, e);
     } else if (kind == ARG) {
-        idx = st->counts[ARG]++;
-        e->index = idx;
+        e->index = st->counts[ARG]++;
         ht_insert(st->subroutine_scope, name, e);
     } else if (kind == VAR) {
-        idx = st->counts[VAR]++;
-        e->index = idx;
+        e->index = st->counts[VAR]++;
         ht_insert(st->subroutine_scope, name, e);
     } else {
         // unknown kind: clean up

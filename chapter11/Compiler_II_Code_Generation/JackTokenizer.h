@@ -36,9 +36,4 @@ void tokenizer_free(JackTokenizer* jt);
 
 void tokens_free(Tokens *t);
 
-char symbol(const Token *t);
-const char* identifier(const Token *t);
-uint16_t int_val(const Token *t);
-const char* string_val(const Token *t);
-
 #endif // JACKTOKENIZER_H_

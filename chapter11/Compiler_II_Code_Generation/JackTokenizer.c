@@ -191,43 +191,6 @@ void tokenizer_scan_all(JackTokenizer* jt, Tokens* out) {
     da_free(buf);
 }
 
-char symbol(const Token *t) {
-    if (t->type != SYMBOL) {
-	fprintf(stderr, "symbol() called on non-symbol token\n");
-	exit(EXIT_FAILURE);
-    }
-    return t->lexeme[0];
-}
-
-const char* identifier(const Token *t) {
-    if (t->type != IDENTIFIER) {
-	fprintf(stderr, "identifier() called on non-identifier token\n");
-	exit(EXIT_FAILURE);
-    }
-    return t->lexeme;
-}
-
-uint16_t int_val(const Token *t) {
-    if (t->type != INT_CONST) {
-	fprintf(stderr, "int_val() called on non-int token\n");
-	exit(EXIT_FAILURE);
-    }
-    int n = atoi(t->lexeme);
-    if (n < 0 || n > 32767) {
-	fprintf(stderr, "int not in 0..32767\n");
-	exit(EXIT_FAILURE);
-    }
-    return (uint16_t)n;
-}
-
-const char* string_val(const Token *t) {
-    if (t->type != STRING_CONST) {
-	fprintf(stderr, "string_val() called on non-string_const token\n");
-	exit(EXIT_FAILURE);
-    }
-    return t->lexeme;
-};
-
 void tokens_free(Tokens *t) {
     if (!t) return;
     for (size_t i = 0; i < t->count; ++i) {

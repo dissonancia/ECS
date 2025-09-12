@@ -2,7 +2,7 @@
 
 // --- Helpers ---
 
-// safe peek
+// peek
 const Token *ce_peek(CompilationEngine *ce) {
     if (!ce) return NULL;
     if (ce->current_token < ce->tokens.count)
@@ -10,7 +10,7 @@ const Token *ce_peek(CompilationEngine *ce) {
     return NULL;
 }
 
-// safe advance
+// advance
 const Token *ce_advance(CompilationEngine *ce) {
     const Token *t = ce_peek(ce);
     if (t) ce->current_token++;
@@ -27,6 +27,7 @@ static bool is_op_symbol(const Token *t) {
     return (c == '+' || c == '-' || c == '*' || c == '/' || c == '&' || c == '|' || c == '<' || c == '>' || c == '=');
 }
 
+// get segment from kind
 static Segment seg_from_kind(Kind k) {
     switch (k) {
         case STATIC: return S_STATIC;
@@ -73,7 +74,7 @@ void compile_term(CompilationEngine *ce);
 size_t compile_expression_list(CompilationEngine *ce);
 
 // --- Implementations ---
-
+// all following the grammar specification
 void compile_class(CompilationEngine *ce) {
     if (!ce || !ce->vm_out) return;
 
@@ -217,12 +218,13 @@ void compile_subroutine(CompilationEngine *ce) {
     }
 
     // set subtypes flags
+    SubroutineType sub_type;
     if (strcmp(t->lexeme, "constructor") == 0)
-        ce->sub_type = SUBROUTINE_CONSTRUCTOR;
+        sub_type = SUBROUTINE_CONSTRUCTOR;
     else if (strcmp(t->lexeme, "function") == 0)
-        ce->sub_type = SUBROUTINE_FUNCTION;
+        sub_type = SUBROUTINE_FUNCTION;
     else
-        ce->sub_type = SUBROUTINE_METHOD;
+        sub_type = SUBROUTINE_METHOD;
 
     // ('void' | type)
     t = ce_advance(ce);
@@ -239,8 +241,7 @@ void compile_subroutine(CompilationEngine *ce) {
         ce->had_error = true;
         return;
     }
-    free(ce->current_subroutine);
-    ce->current_subroutine = strdup((const char *)t->lexeme);
+    const char *current_subroutine = strdup((const char *)t->lexeme);
 
     // '('
     t = ce_advance(ce);
@@ -254,7 +255,7 @@ void compile_subroutine(CompilationEngine *ce) {
     st_start_subroutine(ce->symtab);
 
     // If method, define 'this' as ARG 0 in subroutine scope before parameter list
-    if (ce->sub_type == SUBROUTINE_METHOD) {
+    if (sub_type == SUBROUTINE_METHOD) {
         if (!ce->current_class) {
             fprintf(stderr, "Internal error: current_class is NULL at token %zu\n", ce->current_token);
             ce->had_error = true;
@@ -291,7 +292,7 @@ void compile_subroutine(CompilationEngine *ce) {
     }
 
     // Now we know how many local variables there are
-    ce->current_n_locals = st_var_count(ce->symtab, VAR);
+    size_t current_n_locals = st_var_count(ce->symtab, VAR);
 
     // Emit VM function header: ClassName.subName nLocals
     if (!ce->current_class) {
@@ -299,15 +300,15 @@ void compile_subroutine(CompilationEngine *ce) {
         ce->had_error = true;
         return;
     }
-    size_t sz = strlen(ce->current_class) + strlen(ce->current_subroutine) + 3;
+    size_t sz = strlen(ce->current_class) + strlen(current_subroutine) + 3;
     char *temp = malloc(sz);
     if (!temp) { perror("malloc"); ce->had_error = true; return; }
-    snprintf(temp, sz, "%s.%s", ce->current_class, ce->current_subroutine);
-    vmw_write_function(ce->vm_out, (const char *)temp, ce->current_n_locals);
+    snprintf(temp, sz, "%s.%s", ce->current_class, current_subroutine);
+    vmw_write_function(ce->vm_out, (const char *)temp, current_n_locals);
     free(temp);
 
     // Constructor: allocate memory and set THIS = allocated base
-    if (ce->sub_type == SUBROUTINE_CONSTRUCTOR) {
+    if (sub_type == SUBROUTINE_CONSTRUCTOR) {
         size_t n_fields = st_var_count(ce->symtab, FIELD); // class-scope
         vmw_write_push(ce->vm_out, S_CONST, n_fields);
         vmw_write_call(ce->vm_out, "Memory.alloc", 1);
@@ -315,7 +316,7 @@ void compile_subroutine(CompilationEngine *ce) {
     }
 
     // Method: set THIS to argument 0
-    if (ce->sub_type == SUBROUTINE_METHOD) {
+    if (sub_type == SUBROUTINE_METHOD) {
         vmw_write_push(ce->vm_out, S_ARG, 0);
         vmw_write_pop(ce->vm_out, S_POINTER, 0);
     }

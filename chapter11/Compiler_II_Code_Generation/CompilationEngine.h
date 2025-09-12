@@ -13,29 +13,16 @@ typedef enum {
 typedef struct {
     Tokens tokens;
     size_t current_token;
-
     SymbolTable *symtab;
     FILE *vm_out;
-
     char *current_class;
-    char *current_subroutine;
-    SubroutineType sub_type;
-
     size_t label_counter;
-    
-    size_t current_n_locals;
-
     bool had_error;
 } CompilationEngine;
 
 
 bool compilation_engine_init(CompilationEngine *ce, Tokens tokens, const char *output_path);
 void compilation_engine_free(CompilationEngine *ce);
-
-
-const Token* ce_peek(CompilationEngine *ce);
-const Token* ce_advance(CompilationEngine *ce);
-
 
 void compile_class(CompilationEngine *ce);
 void compile_class_var_dec(CompilationEngine *ce);
