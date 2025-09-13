@@ -10,12 +10,15 @@ typedef enum {
     SUBROUTINE_CONSTRUCTOR
 } SubroutineType;
 
+#define FQ_NAME_BUF_SIZE 256
+
 typedef struct {
+    FILE *vm_out;
     Tokens tokens;
     size_t current_token;
     SymbolTable *symtab;
-    FILE *vm_out;
     char *current_class;
+    char fq_name[FQ_NAME_BUF_SIZE];
     size_t label_counter;
     bool had_error;
 } CompilationEngine;

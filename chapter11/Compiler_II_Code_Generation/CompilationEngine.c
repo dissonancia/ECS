@@ -38,6 +38,12 @@ static Segment seg_from_kind(Kind k) {
     }
 }
 
+// makes a fully-qualified name
+static const char* ce_make_fq_name(CompilationEngine *ce, const char *class, const char *sub) {
+    snprintf(ce->fq_name, FQ_NAME_BUF_SIZE, "%s.%s", class, sub);
+    return ce->fq_name;
+}
+
 bool compilation_engine_init(CompilationEngine *ce, Tokens tokens, const char *output_path) {
     if (!ce) return false;
     FILE *out = fopen(output_path, "w");
@@ -95,6 +101,7 @@ void compile_class(CompilationEngine *ce) {
     }
     free(ce->current_class);
     ce->current_class = strdup((const char *)t->lexeme);
+    if (!ce->current_class) { perror("strdup"); ce->had_error = true; return; }
 
     // { symbol
     t = ce_advance(ce);
@@ -241,7 +248,7 @@ void compile_subroutine(CompilationEngine *ce) {
         ce->had_error = true;
         return;
     }
-    const char *current_subroutine = strdup((const char *)t->lexeme);
+    const char *current_subroutine = (const char *)t->lexeme;
 
     // '('
     t = ce_advance(ce);
@@ -300,12 +307,8 @@ void compile_subroutine(CompilationEngine *ce) {
         ce->had_error = true;
         return;
     }
-    size_t sz = strlen(ce->current_class) + strlen(current_subroutine) + 3;
-    char *temp = malloc(sz);
-    if (!temp) { perror("malloc"); ce->had_error = true; return; }
-    snprintf(temp, sz, "%s.%s", ce->current_class, current_subroutine);
-    vmw_write_function(ce->vm_out, (const char *)temp, current_n_locals);
-    free(temp);
+    const char *fq = ce_make_fq_name(ce, ce->current_class, current_subroutine);
+    vmw_write_function(ce->vm_out, fq, current_n_locals);
 
     // Constructor: allocate memory and set THIS = allocated base
     if (sub_type == SUBROUTINE_CONSTRUCTOR) {
@@ -530,15 +533,10 @@ void compile_do(CompilationEngine *ce) {
             ce->had_error = true;
             return;
         }
-        size_t size_needed = strlen(ce->current_class) + strlen(first) + 2;
-        char *target = malloc(size_needed);
-        if (!target) { perror("malloc"); ce->had_error = true; return; }
-        snprintf(target, size_needed, "%s.%s", ce->current_class, first);
+        const char *target = ce_make_fq_name(ce, ce->current_class, first);
 
-        vmw_write_call(ce->vm_out, target, (int)(expr_count + 1)); // +1 for receiver
+        vmw_write_call(ce->vm_out, target, expr_count + 1); // +1 for receiver
         vmw_write_pop(ce->vm_out, S_TEMP, 0); // discard return
-
-        free(target);
     }
     else if (next->type == SYMBOL && strcmp(next->lexeme, ".") == 0) {
         // qualified call: qualifier.method(...)
@@ -576,7 +574,7 @@ void compile_do(CompilationEngine *ce) {
             size_t idx = st_index_of(ce->symtab, first);
 
             const char *type = st_type_of(ce->symtab, first); // class name string
-            vmw_write_push(ce->vm_out, (Segment)seg, idx);
+            vmw_write_push(ce->vm_out, seg, idx);
 
             // compile arguments
             size_t expr_count = compile_expression_list(ce);
@@ -591,14 +589,10 @@ void compile_do(CompilationEngine *ce) {
             }
 
             // build target: <type>.<method>
-            size_t size_needed = strlen(type) + strlen(method) + 2;
-            char *target = malloc(size_needed);
-            if (!target) { perror("malloc"); ce->had_error = true; return; }
-            snprintf(target, size_needed, "%s.%s", type, method);
+            const char *target = ce_make_fq_name(ce, type, method);
 
-            vmw_write_call(ce->vm_out, target, (int)(expr_count + 1)); // +1 for receiver
+            vmw_write_call(ce->vm_out, target, expr_count + 1); // +1 for receiver
             vmw_write_pop(ce->vm_out, S_TEMP, 0); // discard return
-            free(target);
         } else {
             // class name: no receiver push
             size_t expr_count = compile_expression_list(ce);
@@ -613,14 +607,10 @@ void compile_do(CompilationEngine *ce) {
             }
 
             // build target: <first>.<method>
-            size_t size_needed = strlen(first) + strlen(method) + 2;
-            char *target = malloc(size_needed);
-            if (!target) { perror("malloc"); ce->had_error = true; return; }
-            snprintf(target, size_needed, "%s.%s", first, method);
+            const char *target = ce_make_fq_name(ce, first, method);
 
-            vmw_write_call(ce->vm_out, target, (int)expr_count);
+            vmw_write_call(ce->vm_out, target, expr_count);
             vmw_write_pop(ce->vm_out, S_TEMP, 0); // discard return
-            free(target);
         }
     }
     else {
@@ -765,8 +755,10 @@ void compile_while(CompilationEngine *ce)
     }
 
     char exp_label[64], end_label[64];
-    snprintf(exp_label, sizeof(exp_label), "%s_%zu", ce->current_class, ce->label_counter++);
-    snprintf(end_label, sizeof(end_label), "%s_%zu", ce->current_class, ce->label_counter++);
+    size_t id = ce->label_counter;
+    ce->label_counter += 2;
+    snprintf(exp_label, sizeof(exp_label), "%s_%zu", ce->current_class, id);
+    snprintf(end_label, sizeof(end_label), "%s_%zu", ce->current_class, id + 1);
 
     // start label 
     vmw_write_label(ce->vm_out, exp_label);
@@ -879,8 +871,10 @@ void compile_if(CompilationEngine *ce)
     }
 
     char if_false[64], if_end[64];
-    snprintf(if_false, sizeof(if_false), "%s_%zu", ce->current_class, ce->label_counter++);
-    snprintf(if_end, sizeof(if_end), "%s_%zu", ce->current_class, ce->label_counter++);
+    size_t id = ce->label_counter;
+    ce->label_counter += 2;
+    snprintf(if_false, sizeof(if_false), "%s_%zu", ce->current_class, id);
+    snprintf(if_end, sizeof(if_end), "%s_%zu", ce->current_class, id + 1);
 
     compile_expression(ce);
     if (ce->had_error) return;
@@ -1134,13 +1128,8 @@ void compile_term(CompilationEngine *ce)
                 ce->had_error = true;
                 return;
             }
-            size_t size_needed = strlen(ce->current_class) + strlen(name) + 2;
-            char *target = malloc(size_needed);
-            if (!target) { perror("malloc"); ce->had_error = true; return; }
-            snprintf(target, size_needed, "%s.%s", ce->current_class, name);
-
-            vmw_write_call(ce->vm_out, target, (expr_count + 1)); // +1 receiver 
-            free(target);
+            const char *target = ce_make_fq_name(ce, ce->current_class, name);
+            vmw_write_call(ce->vm_out, target, expr_count + 1); // +1 receiver
             return;
         }
 
@@ -1189,13 +1178,9 @@ void compile_term(CompilationEngine *ce)
                     return;
                 }
 
-                size_t size_needed = strlen(type) + strlen(method) + 2;
-                char *target = malloc(size_needed);
-                if (!target) { perror("malloc"); ce->had_error = true; return; }
-                snprintf(target, size_needed, "%s.%s", type, method);
+                const char *target = ce_make_fq_name(ce, type, method);
+                vmw_write_call(ce->vm_out, target, expr_count + 1); // +1 receiver 
 
-                vmw_write_call(ce->vm_out, target, (int)(expr_count + 1)); // +1 receiver 
-                free(target);
                 return;
             } else {
                 // class name: compile args and call ClassName.method(expr_count) 
@@ -1209,13 +1194,9 @@ void compile_term(CompilationEngine *ce)
                     return;
                 }
 
-                size_t size_needed = strlen(name) + strlen(method) + 2;
-                char *target = malloc(size_needed);
-                if (!target) { perror("malloc"); ce->had_error = true; return; }
-                snprintf(target, size_needed, "%s.%s", name, method);
+                const char *target = ce_make_fq_name(ce, name, method);
+                vmw_write_call(ce->vm_out, target, expr_count);
 
-                vmw_write_call(ce->vm_out, target, (int)expr_count);
-                free(target);
                 return;
             }
         }
