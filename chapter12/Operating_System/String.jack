@@ -1,0 +1,185 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/String.jack
+/**
+ * Represents character strings. In addition for constructing and disposing
+ * strings, the class features methods for getting and setting individual
+ * characters of the string, for erasing the string's last character,
+ * for appending a character to the string's end, and more typical
+ * string-oriented operations.
+ */
+class String {
+    field Array buffer;
+    field int buf_len;
+    field int str_len;
+
+    /** constructs a new empty string with a maximum length of maxLength
+     *  and initial length of 0. */
+    constructor String new(int maxLength) {
+        if (maxLength > 0) {
+            let buffer = Array.new(maxLength);
+        }
+        let buf_len = maxLength;
+        let str_len = 0;
+        return this;
+    }
+
+    /** Disposes this string. */
+    method void dispose() {
+        if (buf_len > 0) {
+            do buffer.dispose();
+        }
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    /** Returns the current length of this string. */
+    method int length() {
+        return str_len;
+    }
+
+    /** Returns the character at the j-th location of this string. */
+    method char charAt(int j) {
+        if ((j < 0) | (j + 1 > str_len)) {
+            do Output.printString("String.CharAt: index out of range!");
+            do Sys.error(5);
+        }
+        return buffer[j];
+    }
+
+    /** Sets the character at the j-th location of this string to c. */
+    method void setCharAt(int j, char c) {
+        if ((j < 0) | (j + 1 > str_len)) {
+            do Output.printString("String.setCharAt: index out of range!");
+            do Sys.error(5);
+        }
+        let buffer[j] = c;
+        return;
+    }
+
+    /** Appends c to this string's end and returns this string. */
+    method String appendChar(char c) {
+        if (str_len = buf_len) {
+            do Output.printString("String.appendChar: reached max length!");
+            do Sys.error(5);
+        }
+        let buffer[str_len] = c;
+        let str_len = str_len + 1;
+        return this;
+    }
+
+    /** Erases the last character from this string. */
+    method void eraseLastChar() {
+        if (str_len = 0) {
+            do Output.printString("String.eraseLastChar: string is already empty!");
+            do Sys.error(5);
+        }
+        let str_len = str_len - 1;
+        return;
+    }
+
+    /** Returns the integer value of this string, 
+     *  until a non-digit character is detected. */
+    method int intValue() {
+        var int n, i;
+        var char c;
+        var boolean neg, done;
+
+        let n = 0;
+        if (buffer[0] = 45) {
+            let i = 1;
+            let neg = true;
+        } else {
+            let i = 0;
+            let neg = false;
+        }
+
+        let c = buffer[i];
+        if ((c < 48) | (c > 57)) {
+            do Sys.error(3);
+            do Output.printString("String.intValue: the input data is not number!");
+        }
+
+        let done = false;
+        while ((~done) & (i < str_len)) {
+            let c = buffer[i];
+            if ((c > 47) & (c < 58)) {
+                let n = n * 10 + (c - 48);
+            } else {
+                let done = true;
+            }
+            let i = i + 1;
+        }
+
+        if (neg) {
+            return -n;
+        } else {
+            return n;
+        }
+    }
+
+    /** Sets this string to hold a representation of the given value. */
+    method void setInt(int val) {
+        var int x, i, y;
+        var boolean neg;
+
+        if (val < 0) {
+            let neg = true;
+            let str_len = 2;
+        } else {
+            let neg = false;
+            let str_len = 1;
+        }
+
+        let x = Math.abs(val);
+        if (x > 9999) {
+            let str_len = str_len + 4;
+        } else { if (x > 999) {
+            let str_len = str_len + 3;
+        } else { if (x > 99) {
+            let str_len = str_len + 2;
+        } else { if (x > 9) {
+            let str_len = str_len + 1;
+        }}}}
+
+        if (str_len > buf_len) {
+            do Output.printString("String.setInt: val is too big for the string!");
+            do Sys.error(5);
+        }
+
+        if (x = 0) {
+            do setCharAt(0, 48);
+            return;
+        }
+
+        if (neg) {
+            do setCharAt(0, 45);
+        }
+
+        let i = str_len - 1;
+        while (x > 0) {
+            let y = x / 10;
+            do setCharAt(i, x - (y * 10) + 48);
+            let x = y;
+            let i = i - 1;
+        }
+
+        return;
+    }
+
+    /** Returns the new line character. */
+    function char newLine() {
+        return 128;
+    }
+
+    /** Returns the backspace character. */
+    function char backSpace() {
+        return 129;
+    }
+
+    /** Returns the double quote (") character. */
+    function char doubleQuote() {
+        return 34;
+    }
+}

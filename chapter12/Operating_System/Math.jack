@@ -1,0 +1,157 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Math.jack
+/**
+ *  A library of commonly used mathematical functions.
+ *  All functions runs in O(n), where n is the number of bits used
+ *  for representing a two's complement integer value (16 in the Hack computer). 
+ *  Note: Jack compilers implement multiplication and division
+ *  using calls to OS functions in this class.
+ */
+class Math {
+    static Array powers_of_two; // Stores 2^0, 2^1, 2^2,..., 2^(n-1)
+
+    // Initializes the Math library.
+    function void init() {
+        var int i, x;
+
+        let x = 1;
+        let i = 0;
+        let powers_of_two = Array.new(16);
+        while (i < 16) {
+            let powers_of_two[i] = x;
+            let x = x + x;
+            let i = i + 1;
+        }
+        return;
+    }
+
+    /** Returns the remainder part of x/y */
+    function int mod(int x, int y) {
+        var int q;
+        let q = Math.divide(x, y);
+        return x - (q * y);
+    }
+
+    /** Returns the number's sign */
+    function int sign(int n) {
+        if (n = 0) {
+            return 0;
+        } else {
+            if (n < 0) {
+                return 0 - 1;
+            } else {
+                return 1;
+            }
+        }
+    }
+
+    /** Returns true if the j-th bit of the integer x is 1 and false otherwise. */
+    function boolean bit(int x, int j) {
+        return ~((x & powers_of_two[j]) = 0);
+    }
+
+    function int two_to_the(int power) {
+        return powers_of_two[power];
+    }
+
+    /** Returns the product of x and y. 
+     *  When a Jack compiler detects the multiplication operator '*'
+     *  in an expression, it handles it by invoking this method. 
+     *  Thus, in Jack, x * y and Math.multiply(x,y) return the same value. */
+    function int multiply(int x, int y) {
+        var int j;
+        var int sum, shifted_x;
+
+        let sum       = 0;
+        let shifted_x = x;
+        
+        let j = 0;
+        while (j < 16) {
+            if (Math.bit(y, j)) {
+                let sum = sum + shifted_x;
+            }
+            let shifted_x = shifted_x + shifted_x;
+            let j = j + 1;
+        }
+
+        return sum;
+    }
+
+    /** Returns the integer part of x / y.
+     *  When a Jack compiler detects the division operator '/'
+     *  an an expression, it handles it by invoking this method.
+     *  Thus, x/y and Math.divide(x,y) return the same value. */
+    function int divide(int x, int y) {
+        var int result;
+        var int neg_x, neg_y;
+        var int q;
+
+        let neg_x = x < 0;
+        let neg_y = y < 0;
+        let x = Math.abs(x);
+        let y = Math.abs(y);
+
+        if (y > x) {
+            return 0;
+        }
+
+        let q = Math.divide(x, y + y);
+
+        if (x - (2 * q * y) < y) {
+            let result = q + q;
+        } else {
+            let result = q + q + 1;
+        }
+
+        if (neg_x = neg_y) {
+            return result;
+        } else {
+            return -result;
+        }
+    }
+
+    /** Returns the integer part of the square root of x. */
+    function int sqrt(int x) {
+        var int approx, approx_squared;
+        var int j, y;
+        let y = 0;
+        let j = 7; // j = n/2 - 1 -> 16 bits -> 16/2 - 1 = 7
+        while (~(j < 0)) {
+            let approx         = y + powers_of_two[j];
+            let approx_squared = approx * approx;
+            if (~(approx_squared > x) & (approx_squared > 0)) { // overflow
+                let y = approx;
+            }
+            let j = j - 1;
+        }
+        return y;
+    }
+
+    /** Returns the greater value. */
+    function int max(int a, int b) {
+        if (a > b) {
+            return a;
+        } else {
+            return b;
+        }
+    }
+
+    /** Returns the smaller value. */
+    function int min(int a, int b) {
+        if (a < b) {
+            return a;
+        } else {
+            return b;
+        }
+    }
+
+    /** Returns the absolute value of x. */
+    function int abs(int x) {
+        if (x < 0) {
+            let x = -x;
+        }
+        return x;
+    }
+}
